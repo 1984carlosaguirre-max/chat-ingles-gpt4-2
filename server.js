@@ -22,7 +22,7 @@ app.post("/api/chat", async (req, res) => {
       body: JSON.stringify({
         model: "gpt-4-turbo",
         messages: [
-          { role: "system", content: "You are an English teacher helping Spanish-speaking students with pronunciation and grammar." },
+          { role: "system", content: "You are an English teacher for Spanish speakers." },
           { role: "user", content: message }
         ]
       })
@@ -31,9 +31,11 @@ app.post("/api/chat", async (req, res) => {
     const data = await response.json();
     res.json({ reply: data.choices?.[0]?.message?.content || "No response" });
   } catch (error) {
+    console.error("Error:", error);
     res.status(500).json({ reply: "Error connecting to OpenAI." });
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+app.listen(PORT, () => console.log(`Servidor funcionando en puerto ${PORT}`));
+
