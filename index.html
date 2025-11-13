@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat de Inglés con GPT (Vercel)</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" />
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    #chat-button {
+      position: fixed; bottom: 20px; right: 20px;
+      background-color: #007bff; color: white;
+      border: none; border-radius: 50%;
+      width: 60px; height: 60px; cursor: pointer;
+      font-size: 24px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); z-index: 9999;
+    }
+    #chat-box {
+      display: none; position: fixed; bottom: 90px; right: 20px;
+      width: 360px; height: 500px; background: white;
+      border: 1px solid #ccc; border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3); overflow: hidden;
+      z-index: 9999; display: flex; flex-direction: column;
+    }
+    #chat-header { background: #007bff; color: white; padding: 10px; text-align: center; font-weight: bold; }
+    #chat-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 14px; background: #f5f5f5; }
+    .message { margin-bottom: 10px; padding: 8px 10px; border-radius: 10px; max-width: 80%; clear: both; }
+    .user { background: #007bff; color: white; float: right; text-align: right; }
+    .assistant { background: #e9ecef; float: left; text-align: left; }
+    #chat-input { display: flex; border-top: 1px solid #ddd; }
+    #chat-input input { flex: 1; border: none; padding: 10px; font-size: 14px; }
+    #chat-input button { background: #007bff; color: white; border: none; padding: 10px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <button id="chat-button"><i class="fas fa-comments"></i></button>
+  <div id="chat-box">
+    <div id="chat-header">💬 Chat de Inglés</div>
+    <div id="chat-messages"></div>
+    <div id="chat-input">
+      <input type="text" id="userInput" placeholder="Escribe tu mensaje..." />
+      <button id="sendButton">Enviar</button>
+    </div>
+  </div>
+  <script>
+    const chatButton = document.getElementById('chat-button');
+    const chatBox = document.getElementById('chat-box');
+    const sendButton = document.getElementById('sendButton');
+    const userInput = document.getElementById('userInput');
+    const chatMessages = document.getElementById('chat-messages');
+    let messages = [];
+
+    chatButton.addEventListener('click', () => {
+      chatBox.style.display = (chatBox.style.display === 'none') ? 'flex' : 'none';
+    });
+
+    async function sendMessage() {
+      const content = userInput.value.trim();
+      if (!content) return;
+      messages.push({ role: 'user', content });
+      appendMessage(content, 'user');
+      userInput.value = '';
+      appendMessage('...', 'assistant', true);
+
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages }),
+        });
+        const data = await response.json();
+        const reply = data.reply || 'Sin respuesta del servidor.';
+        messages.push({ role: 'assistant', content: reply });
+        removeTyping();
+        appendMessage(reply, 'assistant');
+      } catch (err) {
+        removeTyping();
+        appendMessage('Error de conexión con el servidor.', 'assistant');
+      }
+    }
+
+    function appendMessage(text, sender, typing = false) {
+      const div = document.createElement('div');
+      div.className = `message ${sender}`;
+      div.textContent = text;
+      if (typing) div.id = 'typing';
+      chatMessages.appendChild(div);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function removeTyping() {
+      const typing = document.getElementById('typing');
+      if (typing) typing.remove();
+    }
+
+    sendButton.addEventListener('click', sendMessage);
+    userInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+  </script>
+</body>
+</html>
